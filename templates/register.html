@@ -1,0 +1,180 @@
+{% extends 'base.html' %}
+{% block title %}Register — SkyRoute{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-bg">
+    <div class="auth-orb auth-orb-1"></div>
+    <div class="auth-orb auth-orb-2"></div>
+  </div>
+  <div class="container position-relative" style="z-index:2; padding-top: 100px; padding-bottom: 60px;">
+    <div class="row justify-content-center">
+      <div class="col-lg-6 col-md-8">
+        <div class="auth-card animate-fade-up">
+          <!-- Header -->
+          <div class="auth-card-header text-center">
+            <div class="auth-logo mb-3">
+              <i class="bi bi-person-plus-fill"></i>
+            </div>
+            <h2 class="auth-title">Create Account</h2>
+            <p class="auth-subtitle">Join SkyRoute and start your journey today</p>
+          </div>
+
+          <!-- Form -->
+          <div class="auth-card-body">
+            <form method="POST" action="{% url 'register' %}" id="registerForm" novalidate>
+              {% csrf_token %}
+
+              <div class="row g-3">
+                <!-- First Name -->
+                <div class="col-md-6">
+                  <label class="form-label fms-label" for="{{ form.first_name.id_for_label }}">
+                    <i class="bi bi-person me-1 text-primary"></i> First Name
+                  </label>
+                  {{ form.first_name }}
+                  {% if form.first_name.errors %}
+                    <div class="fms-field-error">{{ form.first_name.errors.0 }}</div>
+                  {% endif %}
+                </div>
+
+                <!-- Last Name -->
+                <div class="col-md-6">
+                  <label class="form-label fms-label" for="{{ form.last_name.id_for_label }}">
+                    <i class="bi bi-person me-1 text-primary"></i> Last Name
+                  </label>
+                  {{ form.last_name }}
+                  {% if form.last_name.errors %}
+                    <div class="fms-field-error">{{ form.last_name.errors.0 }}</div>
+                  {% endif %}
+                </div>
+
+                <!-- Email -->
+                <div class="col-12">
+                  <label class="form-label fms-label" for="{{ form.email.id_for_label }}">
+                    <i class="bi bi-envelope me-1 text-primary"></i> Email Address
+                  </label>
+                  {{ form.email }}
+                  {% if form.email.errors %}
+                    <div class="fms-field-error">{{ form.email.errors.0 }}</div>
+                  {% endif %}
+                </div>
+
+                <!-- Username -->
+                <div class="col-12">
+                  <label class="form-label fms-label" for="{{ form.username.id_for_label }}">
+                    <i class="bi bi-at me-1 text-primary"></i> Username
+                  </label>
+                  {{ form.username }}
+                  {% if form.username.errors %}
+                    <div class="fms-field-error">{{ form.username.errors.0 }}</div>
+                  {% endif %}
+                </div>
+
+                <!-- Password -->
+                <div class="col-md-6">
+                  <label class="form-label fms-label" for="{{ form.password1.id_for_label }}">
+                    <i class="bi bi-lock me-1 text-primary"></i> Password
+                  </label>
+                  <div class="position-relative">
+                    {{ form.password1 }}
+                    <button type="button" class="fms-password-toggle" id="togglePass1">
+                      <i class="bi bi-eye" id="togglePass1Icon"></i>
+                    </button>
+                  </div>
+                  {% if form.password1.errors %}
+                    <div class="fms-field-error">{{ form.password1.errors.0 }}</div>
+                  {% endif %}
+                </div>
+
+                <!-- Confirm Password -->
+                <div class="col-md-6">
+                  <label class="form-label fms-label" for="{{ form.password2.id_for_label }}">
+                    <i class="bi bi-lock-fill me-1 text-primary"></i> Confirm
+                  </label>
+                  <div class="position-relative">
+                    {{ form.password2 }}
+                    <button type="button" class="fms-password-toggle" id="togglePass2">
+                      <i class="bi bi-eye" id="togglePass2Icon"></i>
+                    </button>
+                  </div>
+                  {% if form.password2.errors %}
+                    <div class="fms-field-error">{{ form.password2.errors.0 }}</div>
+                  {% endif %}
+                </div>
+
+                {% if form.non_field_errors %}
+                <div class="col-12">
+                  <div class="alert fms-alert-error">
+                    <i class="bi bi-exclamation-circle me-2"></i>
+                    {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+                  </div>
+                </div>
+                {% endif %}
+
+                <!-- Terms -->
+                <div class="col-12">
+                  <div class="form-check">
+                    <input class="form-check-input fms-checkbox" type="checkbox" id="termsCheck" required />
+                    <label class="form-check-label text-muted small" for="termsCheck">
+                      I agree to the <a href="#" class="auth-link">Terms of Service</a> and
+                      <a href="#" class="auth-link">Privacy Policy</a>
+                    </label>
+                  </div>
+                </div>
+
+                <div class="col-12">
+                  <button type="submit" class="btn fms-btn-primary w-100 py-2" id="registerBtn">
+                    <span class="btn-text"><i class="bi bi-person-check me-2"></i>Create Account</span>
+                    <span class="btn-loading d-none">
+                      <span class="spinner-border spinner-border-sm me-2"></span>Creating...
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Footer -->
+          <div class="auth-card-footer text-center">
+            <p class="mb-0 text-muted">Already have an account?
+              <a href="{% url 'login' %}" class="auth-link">Sign in</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Password toggles
+  [['togglePass1', 'id_password1', 'togglePass1Icon'], ['togglePass2', 'id_password2', 'togglePass2Icon']].forEach(([btnId, inputId, iconId]) => {
+    const btn = document.getElementById(btnId);
+    if (btn) {
+      btn.addEventListener('click', () => {
+        const inp = document.getElementById(inputId);
+        const icon = document.getElementById(iconId);
+        const isPass = inp.type === 'password';
+        inp.type = isPass ? 'text' : 'password';
+        icon.className = isPass ? 'bi bi-eye-slash' : 'bi bi-eye';
+      });
+    }
+  });
+
+  // Loading state
+  document.getElementById('registerForm').addEventListener('submit', function(e) {
+    const terms = document.getElementById('termsCheck');
+    if (!terms.checked) {
+      e.preventDefault();
+      terms.classList.add('is-invalid');
+      return;
+    }
+    const btn = document.getElementById('registerBtn');
+    btn.querySelector('.btn-text').classList.add('d-none');
+    btn.querySelector('.btn-loading').classList.remove('d-none');
+    btn.disabled = true;
+  });
+</script>
+{% endblock %}

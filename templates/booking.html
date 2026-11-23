@@ -1,0 +1,238 @@
+{% extends 'base.html' %}
+
+{% block title %}Book Flight {{ flight.flight_number }} — SkyRoute{% endblock %}
+
+{% block content %}
+<div class="booking-page" style="padding-top: 90px; padding-bottom: 60px;">
+  <div class="container-xl">
+
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+      <a href="javascript:history.back()" class="btn fms-btn-ghost btn-sm mb-3">
+        <i class="bi bi-arrow-left me-1"></i> Back to Results
+      </a>
+      <h1 class="page-title">
+        <i class="bi bi-ticket-perforated-fill text-primary me-2"></i>
+        Complete Your Booking
+      </h1>
+    </div>
+
+    <div class="row g-4">
+      <!-- LEFT: Passenger Forms -->
+      <div class="col-lg-8">
+
+        <!-- Flight Summary Card -->
+        <div class="booking-flight-card mb-4">
+          <div class="booking-flight-header">
+            <i class="bi bi-airplane-fill me-2"></i>
+            Flight Details
+          </div>
+          <div class="booking-flight-body">
+            <div class="row align-items-center g-3">
+              <div class="col-auto">
+                <div class="airline-logo-sm">
+                  <i class="bi bi-airplane-fill"></i>
+                </div>
+              </div>
+              <div class="col">
+                <div class="fw-700 text-white fs-6">{{ flight.airline }}</div>
+                <div class="text-muted small">{{ flight.flight_number }} · {{ flight.aircraft_type }}</div>
+              </div>
+              <div class="col-auto">
+                <span class="badge fms-class-badge-lg">{{ seat_class_display }}</span>
+              </div>
+            </div>
+
+            <div class="flight-route-banner mt-3">
+              <div class="text-center">
+                <div class="route-time">{{ flight.departure_time|date:"H:i" }}</div>
+                <div class="route-code">{{ flight.origin.code }}</div>
+                <div class="route-city">{{ flight.origin.city }}</div>
+                <div class="route-date text-muted small">{{ flight.departure_time|date:"d M Y" }}</div>
+              </div>
+              <div class="route-mid">
+                <div class="route-line"></div>
+                <div class="route-duration">
+                  <i class="bi bi-clock me-1"></i>{{ flight.duration_display }}
+                </div>
+                <div class="route-plane-icon"><i class="bi bi-airplane-fill"></i></div>
+                <div class="route-line"></div>
+              </div>
+              <div class="text-center">
+                <div class="route-time">{{ flight.arrival_time|date:"H:i" }}</div>
+                <div class="route-code">{{ flight.destination.code }}</div>
+                <div class="route-city">{{ flight.destination.city }}</div>
+                <div class="route-date text-muted small">{{ flight.arrival_time|date:"d M Y" }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Passenger Forms -->
+        <form method="POST" action="{% url 'booking' flight.id %}" id="bookingForm" novalidate>
+          {% csrf_token %}
+          {{ formset.management_form }}
+          <input type="hidden" name="seat_class" value="{{ seat_class }}" />
+          <input type="hidden" name="num_passengers" value="{{ num_passengers }}" />
+
+          {% for pform in formset %}
+          <div class="passenger-form-card mb-3">
+            <div class="passenger-form-header">
+              <div class="passenger-avatar">{{ forloop.counter }}</div>
+              <div>
+                <div class="fw-600 text-white">Passenger {{ forloop.counter }}</div>
+                <div class="text-muted small">Enter passenger details</div>
+              </div>
+            </div>
+            <div class="passenger-form-body">
+              {% if pform.non_field_errors %}
+              <div class="alert fms-alert-error mb-3">{{ pform.non_field_errors }}</div>
+              {% endif %}
+              <div class="row g-3">
+                <div class="col-md-6">
+                  <label class="form-label fms-label">First Name *</label>
+                  {{ pform.first_name }}
+                  {% if pform.first_name.errors %}
+                    <div class="fms-field-error">{{ pform.first_name.errors.0 }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fms-label">Last Name *</label>
+                  {{ pform.last_name }}
+                  {% if pform.last_name.errors %}
+                    <div class="fms-field-error">{{ pform.last_name.errors.0 }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fms-label">Date of Birth *</label>
+                  {{ pform.date_of_birth }}
+                  {% if pform.date_of_birth.errors %}
+                    <div class="fms-field-error">{{ pform.date_of_birth.errors.0 }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-md-6">
+                  <label class="form-label fms-label">Nationality *</label>
+                  {{ pform.nationality }}
+                  {% if pform.nationality.errors %}
+                    <div class="fms-field-error">{{ pform.nationality.errors.0 }}</div>
+                  {% endif %}
+                </div>
+                <div class="col-12">
+                  <label class="form-label fms-label">Passport / ID Number *</label>
+                  {{ pform.passport_number }}
+                  {% if pform.passport_number.errors %}
+                    <div class="fms-field-error">{{ pform.passport_number.errors.0 }}</div>
+                  {% endif %}
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+
+          <!-- Terms & Submit -->
+          <div class="booking-terms-card">
+            <div class="form-check mb-3">
+              <input class="form-check-input fms-checkbox" type="checkbox" id="bookingTerms" required />
+              <label class="form-check-label text-muted" for="bookingTerms">
+                I agree to the <a href="#" class="auth-link">Terms & Conditions</a>, and confirm all passenger details are correct.
+              </label>
+            </div>
+            <button type="submit" class="btn fms-btn-primary w-100 py-3 btn-confirm" id="confirmBtn">
+              <span class="btn-text">
+                <i class="bi bi-check-circle me-2"></i>
+                Confirm Booking — ₹{{ total_price|floatformat:0 }}
+              </span>
+              <span class="btn-loading d-none">
+                <span class="spinner-border spinner-border-sm me-2"></span>Processing...
+              </span>
+            </button>
+          </div>
+        </form>
+      </div>
+
+      <!-- RIGHT: Price Summary -->
+      <div class="col-lg-4">
+        <div class="sticky-top" style="top: 90px;">
+          <div class="price-summary-card">
+            <div class="price-summary-header">
+              <i class="bi bi-receipt me-2"></i> Price Summary
+            </div>
+            <div class="price-summary-body">
+              <div class="price-row">
+                <span>Base Fare <small>(per person)</small></span>
+                <span>₹{{ price_per|floatformat:0 }}</span>
+              </div>
+              <div class="price-row">
+                <span>Passengers</span>
+                <span>× {{ num_passengers }}</span>
+              </div>
+              <div class="price-row">
+                <span>Taxes & Fees</span>
+                <span class="text-success">Included</span>
+              </div>
+              <hr class="fms-divider my-3" />
+              <div class="price-row price-total-row">
+                <span>Total Amount</span>
+                <span class="price-total-amount">₹{{ total_price|floatformat:0 }}</span>
+              </div>
+            </div>
+            <div class="price-summary-footer">
+              <div class="secure-badge">
+                <i class="bi bi-shield-lock-fill text-success me-2"></i>
+                <span class="small text-muted">Secure & Encrypted Payment</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Seat Class Info -->
+          <div class="seat-info-card mt-3">
+            <div class="seat-info-header">
+              <i class="bi bi-award-fill me-2 text-primary"></i>
+              {{ seat_class_display }} Class
+            </div>
+            <ul class="seat-info-features">
+              {% if seat_class == 'economy' %}
+              <li><i class="bi bi-check-circle-fill text-success me-2"></i>Standard Seat (31" pitch)</li>
+              <li><i class="bi bi-check-circle-fill text-success me-2"></i>Personal Entertainment Screen</li>
+              <li><i class="bi bi-check-circle-fill text-success me-2"></i>Meal Included</li>
+              <li><i class="bi bi-check-circle-fill text-success me-2"></i>23kg Baggage Allowance</li>
+              {% elif seat_class == 'business' %}
+              <li><i class="bi bi-check-circle-fill text-success me-2"></i>Lie-Flat Seat (60" pitch)</li>
+              <li><i class="bi bi-check-circle-fill text-success me-2"></i>Premium Dining</li>
+              <li><i class="bi bi-check-circle-fill text-success me-2"></i>Priority Boarding</li>
+              <li><i class="bi bi-check-circle-fill text-success me-2"></i>40kg Baggage Allowance</li>
+              <li><i class="bi bi-check-circle-fill text-success me-2"></i>Lounge Access</li>
+              {% else %}
+              <li><i class="bi bi-check-circle-fill text-success me-2"></i>Private Suite</li>
+              <li><i class="bi bi-check-circle-fill text-success me-2"></i>Fine Dining Experience</li>
+              <li><i class="bi bi-check-circle-fill text-success me-2"></i>Dedicated Butler</li>
+              <li><i class="bi bi-check-circle-fill text-success me-2"></i>50kg Baggage Allowance</li>
+              <li><i class="bi bi-check-circle-fill text-success me-2"></i>Exclusive Lounge & Spa</li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.getElementById('bookingForm').addEventListener('submit', function(e) {
+  const terms = document.getElementById('bookingTerms');
+  if (!terms.checked) {
+    e.preventDefault();
+    terms.classList.add('is-invalid');
+    terms.closest('.form-check').querySelector('label').style.color = 'var(--fms-danger)';
+    return;
+  }
+  const btn = document.getElementById('confirmBtn');
+  btn.querySelector('.btn-text').classList.add('d-none');
+  btn.querySelector('.btn-loading').classList.remove('d-none');
+  btn.disabled = true;
+});
+</script>
+{% endblock %}

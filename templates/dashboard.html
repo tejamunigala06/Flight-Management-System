@@ -1,0 +1,314 @@
+{% extends 'base.html' %}
+
+{% block title %}Admin Dashboard — SkyRoute{% endblock %}
+
+{% block extra_css %}
+<style>
+.chart-container { position: relative; height: 280px; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="dashboard-page" style="padding-top: 90px; padding-bottom: 60px;">
+  <div class="container-xl">
+
+    <!-- Page Header -->
+    <div class="page-header d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h1 class="page-title">
+          <i class="bi bi-speedometer2 text-primary me-2"></i>
+          Admin Dashboard
+        </h1>
+        <p class="text-muted mb-0">Welcome back, <strong class="text-white">{{ user.first_name }}</strong> — here's your system overview.</p>
+      </div>
+      <div class="d-flex gap-2">
+        <a href="/admin/" class="btn fms-btn-ghost btn-sm">
+          <i class="bi bi-gear me-1"></i> Django Admin
+        </a>
+        <a href="{% url 'home' %}" class="btn fms-btn-primary btn-sm">
+          <i class="bi bi-house me-1"></i> Homepage
+        </a>
+      </div>
+    </div>
+
+    <!-- ══════ KPI CARDS ══════ -->
+    <div class="row g-3 mb-4">
+      <div class="col-xl-3 col-md-6">
+        <div class="kpi-card animate-fade-up" style="--kpi-color: #4361ee;">
+          <div class="kpi-icon"><i class="bi bi-airplane-fill"></i></div>
+          <div class="kpi-info">
+            <div class="kpi-value">{{ total_flights }}</div>
+            <div class="kpi-label">Total Flights</div>
+            <div class="kpi-sub text-muted small">{{ scheduled_flights }} scheduled</div>
+          </div>
+          <div class="kpi-bg-icon"><i class="bi bi-airplane-fill"></i></div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-md-6">
+        <div class="kpi-card animate-fade-up" style="--kpi-color: #4cc9f0; animation-delay:.1s">
+          <div class="kpi-icon"><i class="bi bi-ticket-perforated-fill"></i></div>
+          <div class="kpi-info">
+            <div class="kpi-value">{{ total_bookings }}</div>
+            <div class="kpi-label">Total Bookings</div>
+            <div class="kpi-sub text-muted small">{{ confirmed_bookings }} confirmed</div>
+          </div>
+          <div class="kpi-bg-icon"><i class="bi bi-ticket-perforated-fill"></i></div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-md-6">
+        <div class="kpi-card animate-fade-up" style="--kpi-color: #22c55e; animation-delay:.2s">
+          <div class="kpi-icon"><i class="bi bi-people-fill"></i></div>
+          <div class="kpi-info">
+            <div class="kpi-value">{{ total_users }}</div>
+            <div class="kpi-label">Registered Users</div>
+            <div class="kpi-sub text-muted small">Active passengers</div>
+          </div>
+          <div class="kpi-bg-icon"><i class="bi bi-people-fill"></i></div>
+        </div>
+      </div>
+      <div class="col-xl-3 col-md-6">
+        <div class="kpi-card animate-fade-up" style="--kpi-color: #f9c74f; animation-delay:.3s">
+          <div class="kpi-icon"><i class="bi bi-currency-rupee"></i></div>
+          <div class="kpi-info">
+            <div class="kpi-value">₹{{ total_revenue|floatformat:0 }}</div>
+            <div class="kpi-label">Total Revenue</div>
+            <div class="kpi-sub text-muted small">From confirmed bookings</div>
+          </div>
+          <div class="kpi-bg-icon"><i class="bi bi-currency-rupee"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════ CHARTS ROW ══════ -->
+    <div class="row g-4 mb-4">
+      <!-- Bookings Over Time -->
+      <div class="col-lg-8">
+        <div class="dashboard-card h-100">
+          <div class="dashboard-card-header">
+            <i class="bi bi-graph-up-arrow text-primary me-2"></i>
+            Bookings (Last 7 Days)
+          </div>
+          <div class="dashboard-card-body">
+            <div class="chart-container">
+              <canvas id="bookingsChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Booking Status Donut -->
+      <div class="col-lg-4">
+        <div class="dashboard-card h-100">
+          <div class="dashboard-card-header">
+            <i class="bi bi-pie-chart-fill text-primary me-2"></i>
+            Booking Status
+          </div>
+          <div class="dashboard-card-body d-flex flex-column align-items-center justify-content-center">
+            <div style="max-width: 220px; width: 100%;">
+              <canvas id="statusChart"></canvas>
+            </div>
+            <div class="mt-3 d-flex gap-3 justify-content-center flex-wrap">
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#22c55e;"></span>
+                <span class="text-muted small">Confirmed: {{ confirmed_bookings }}</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-dot" style="background:#ef4444;"></span>
+                <span class="text-muted small">Cancelled: {{ cancelled_bookings }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════ BOTTOM ROW ══════ -->
+    <div class="row g-4">
+      <!-- Recent Bookings Table -->
+      <div class="col-lg-8">
+        <div class="dashboard-card">
+          <div class="dashboard-card-header d-flex align-items-center justify-content-between">
+            <div><i class="bi bi-clock-history text-primary me-2"></i>Recent Bookings</div>
+            <a href="#" class="btn fms-btn-ghost btn-sm">View All</a>
+          </div>
+          <div class="dashboard-card-body">
+            <div class="table-responsive">
+              <table class="table fms-table mb-0">
+                <thead>
+                  <tr>
+                    <th>Reference</th>
+                    <th>User</th>
+                    <th>Route</th>
+                    <th>Class</th>
+                    <th>Amount</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {% for b in recent_bookings %}
+                  <tr>
+                    <td><code class="text-primary">{{ b.booking_reference }}</code></td>
+                    <td>{{ b.user.get_full_name|default:b.user.username }}</td>
+                    <td>
+                      <span class="text-white">{{ b.flight.origin.code }}</span>
+                      <i class="bi bi-arrow-right mx-1 text-primary small"></i>
+                      <span class="text-white">{{ b.flight.destination.code }}</span>
+                    </td>
+                    <td><span class="badge fms-class-badge">{{ b.get_seat_class_display }}</span></td>
+                    <td class="text-success fw-600">₹{{ b.total_price|floatformat:0 }}</td>
+                    <td><span class="badge {{ b.status_badge_class }}">{{ b.get_status_display }}</span></td>
+                  </tr>
+                  {% empty %}
+                  <tr><td colspan="6" class="text-center text-muted py-4">No bookings yet</td></tr>
+                  {% endfor %}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Top Routes + Revenue -->
+      <div class="col-lg-4">
+        <!-- Top Routes -->
+        <div class="dashboard-card mb-4">
+          <div class="dashboard-card-header">
+            <i class="bi bi-geo-alt-fill text-primary me-2"></i>Top Routes
+          </div>
+          <div class="dashboard-card-body">
+            {% for route in top_routes %}
+            <div class="top-route-row">
+              <div class="route-label">
+                <span class="text-white fw-600">{{ route.flight__origin__city }}</span>
+                <i class="bi bi-arrow-right mx-1 text-primary small"></i>
+                <span class="text-white fw-600">{{ route.flight__destination__city }}</span>
+              </div>
+              <div class="d-flex align-items-center gap-2">
+                <div class="route-bar-bg">
+                  <div class="route-bar-fill" style="width: {% widthratio route.count top_routes.0.count 100 %}%"></div>
+                </div>
+                <span class="text-muted small">{{ route.count }}</span>
+              </div>
+            </div>
+            {% empty %}
+            <div class="text-center text-muted py-3">No booking data yet</div>
+            {% endfor %}
+          </div>
+        </div>
+
+        <!-- Revenue by Airline -->
+        <div class="dashboard-card">
+          <div class="dashboard-card-header">
+            <i class="bi bi-bar-chart-fill text-primary me-2"></i>Revenue by Airline
+          </div>
+          <div class="dashboard-card-body">
+            <div class="chart-container" style="height: 220px;">
+              <canvas id="airlineChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// ── Bookings Line Chart ──
+const bookingsCtx = document.getElementById('bookingsChart').getContext('2d');
+new Chart(bookingsCtx, {
+  type: 'line',
+  data: {
+    labels: {{ chart_labels|safe }},
+    datasets: [{
+      label: 'Bookings',
+      data: {{ chart_data|safe }},
+      borderColor: '#4361ee',
+      backgroundColor: 'rgba(67,97,238,0.15)',
+      borderWidth: 2.5,
+      tension: 0.4,
+      fill: true,
+      pointBackgroundColor: '#4cc9f0',
+      pointRadius: 5,
+      pointHoverRadius: 7,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: 'rgba(255,255,255,0.05)' },
+        ticks: { color: '#6b7280', stepSize: 1 }
+      },
+      x: {
+        grid: { display: false },
+        ticks: { color: '#6b7280' }
+      }
+    }
+  }
+});
+
+// ── Status Donut Chart ──
+const statusCtx = document.getElementById('statusChart').getContext('2d');
+new Chart(statusCtx, {
+  type: 'doughnut',
+  data: {
+    labels: ['Confirmed', 'Cancelled'],
+    datasets: [{
+      data: [{{ confirmed_bookings }}, {{ cancelled_bookings }}],
+      backgroundColor: ['#22c55e', '#ef4444'],
+      borderColor: ['#16a34a', '#dc2626'],
+      borderWidth: 2,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: true,
+    cutout: '70%',
+    plugins: {
+      legend: { display: false }
+    }
+  }
+});
+
+// ── Revenue by Airline Bar Chart ──
+const airlineCtx = document.getElementById('airlineChart').getContext('2d');
+const airlineData = [
+  {% for item in revenue_by_airline %}
+  { airline: '{{ item.flight__airline }}', revenue: {{ item.revenue }} },
+  {% endfor %}
+];
+new Chart(airlineCtx, {
+  type: 'bar',
+  data: {
+    labels: airlineData.map(d => d.airline),
+    datasets: [{
+      data: airlineData.map(d => d.revenue),
+      backgroundColor: ['#4361ee','#4cc9f0','#f72585','#f9c74f','#22c55e','#a855f7'],
+      borderRadius: 6,
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: {
+        beginAtZero: true,
+        grid: { color: 'rgba(255,255,255,0.05)' },
+        ticks: { color: '#6b7280', callback: v => '₹' + (v/1000).toFixed(0) + 'k' }
+      },
+      x: {
+        grid: { display: false },
+        ticks: { color: '#6b7280', maxRotation: 30 }
+      }
+    }
+  }
+});
+</script>
+{% endblock %}

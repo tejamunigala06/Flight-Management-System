@@ -1,0 +1,174 @@
+{% extends 'base.html' %}
+
+{% block title %}My Bookings — SkyRoute{% endblock %}
+
+{% block content %}
+<div class="history-page" style="padding-top: 90px; padding-bottom: 60px;">
+  <div class="container-xl">
+
+    <!-- Page Header -->
+    <div class="page-header mb-4">
+      <h1 class="page-title">
+        <i class="bi bi-ticket-perforated-fill text-primary me-2"></i>
+        My Bookings
+      </h1>
+      <p class="text-muted">View and manage all your flight bookings</p>
+    </div>
+
+    <!-- Stats Row -->
+    <div class="row g-3 mb-4">
+      <div class="col-md-4">
+        <div class="history-stat-card" style="--stat-color: #4361ee;">
+          <div class="stat-icon"><i class="bi bi-ticket-perforated-fill"></i></div>
+          <div class="stat-info">
+            <div class="stat-value">{{ bookings.count }}</div>
+            <div class="stat-label">Total Bookings</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="history-stat-card" style="--stat-color: #22c55e;">
+          <div class="stat-icon"><i class="bi bi-check-circle-fill"></i></div>
+          <div class="stat-info">
+            <div class="stat-value">{{ confirmed_count }}</div>
+            <div class="stat-label">Confirmed</div>
+          </div>
+        </div>
+      </div>
+      <div class="col-md-4">
+        <div class="history-stat-card" style="--stat-color: #f72585;">
+          <div class="stat-icon"><i class="bi bi-currency-rupee"></i></div>
+          <div class="stat-info">
+            <div class="stat-value">₹{{ total_spent|floatformat:0 }}</div>
+            <div class="stat-label">Total Spent</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Booking List -->
+    {% if bookings %}
+    <div class="bookings-list">
+      {% for booking in bookings %}
+      <div class="booking-history-card animate-fade-up {% if booking.status == 'cancelled' %}booking-cancelled{% endif %}">
+        <!-- Card Top -->
+        <div class="booking-history-top">
+          <div class="d-flex align-items-center gap-3">
+            <div class="booking-ref-badge">
+              <div class="ref-label">Ref</div>
+              <div class="ref-code">{{ booking.booking_reference }}</div>
+            </div>
+            <div>
+              <div class="booking-route">
+                <span class="text-white fw-700">{{ booking.flight.origin.city }}</span>
+                <i class="bi bi-arrow-right mx-2 text-primary"></i>
+                <span class="text-white fw-700">{{ booking.flight.destination.city }}</span>
+              </div>
+              <div class="booking-meta-row">
+                <span><i class="bi bi-airplane me-1"></i>{{ booking.flight.flight_number }}</span>
+                <span>·</span>
+                <span><i class="bi bi-calendar3 me-1"></i>{{ booking.flight.departure_time|date:"d M Y, H:i" }}</span>
+                <span>·</span>
+                <span><i class="bi bi-award me-1"></i>{{ booking.get_seat_class_display }}</span>
+                <span>·</span>
+                <span><i class="bi bi-people me-1"></i>{{ booking.num_passengers }} pax</span>
+              </div>
+            </div>
+          </div>
+          <div class="text-end">
+            <span class="badge {{ booking.status_badge_class }} mb-1">{{ booking.get_status_display }}</span>
+            <div class="booking-price">₹{{ booking.total_price|floatformat:0 }}</div>
+            <div class="text-muted small">{{ booking.created_at|date:"d M Y" }}</div>
+          </div>
+        </div>
+
+        <!-- Card Actions -->
+        <div class="booking-history-actions">
+          <div class="d-flex gap-2 flex-wrap">
+            <a href="{% url 'confirmation' booking.booking_reference %}" class="btn fms-btn-ghost btn-sm">
+              <i class="bi bi-eye me-1"></i> View E-Ticket
+            </a>
+            {% if booking.status == 'confirmed' and booking.flight.departure_time > now %}
+            <button type="button" class="btn btn-danger btn-sm fms-btn-cancel-sm"
+                    data-bs-toggle="modal" data-bs-target="#cancelModal{{ booking.booking_reference }}">
+              <i class="bi bi-x-circle me-1"></i> Cancel
+            </button>
+            {% endif %}
+          </div>
+
+          <!-- Airline badge -->
+          <div class="booking-airline-badge">
+            <i class="bi bi-airplane-fill me-1"></i>{{ booking.flight.airline }}
+          </div>
+        </div>
+      </div>
+
+      <!-- Cancel Modal -->
+      {% if booking.status == 'confirmed' %}
+      <div class="modal fade fms-modal" id="cancelModal{{ booking.booking_reference }}"
+           tabindex="-1" aria-labelledby="cancelModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+          <div class="modal-content">
+            <div class="modal-header border-0">
+              <h5 class="modal-title text-white" id="cancelModalLabel">
+                <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+                Cancel Booking
+              </h5>
+              <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-muted">
+              <p>Are you sure you want to cancel booking <strong class="text-white">{{ booking.booking_reference }}</strong>?</p>
+              <div class="cancel-details-box">
+                <div><i class="bi bi-airplane me-2 text-primary"></i>{{ booking.flight.flight_number }} — {{ booking.flight.origin.city }} → {{ booking.flight.destination.city }}</div>
+                <div><i class="bi bi-calendar me-2 text-primary"></i>{{ booking.flight.departure_time|date:"d M Y, H:i" }}</div>
+                <div class="text-warning mt-2">
+                  <i class="bi bi-info-circle me-1"></i>
+                  This action cannot be undone. Refund policies may apply.
+                </div>
+              </div>
+            </div>
+            <div class="modal-footer border-0">
+              <button type="button" class="btn fms-btn-ghost" data-bs-dismiss="modal">Keep Booking</button>
+              <a href="{% url 'cancel_booking' booking.booking_reference %}" class="btn btn-danger">
+                <i class="bi bi-x-circle me-2"></i>Yes, Cancel
+              </a>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endif %}
+
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- Empty State -->
+    <div class="empty-state text-center py-5">
+      <div class="empty-state-icon mb-3">
+        <i class="bi bi-ticket-perforated"></i>
+      </div>
+      <h3 class="text-white mb-2">No Bookings Yet</h3>
+      <p class="text-muted mb-4">You haven't made any flight bookings yet. Start exploring destinations!</p>
+      <a href="{% url 'home' %}" class="btn fms-btn-primary btn-lg">
+        <i class="bi bi-search me-2"></i>Search Flights
+      </a>
+    </div>
+    {% endif %}
+
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Make 'now' available for template comparison (already handled in view)
+// Auto-dismiss cancelled booking notices after 3s
+const toasts = document.querySelectorAll('.toast');
+toasts.forEach(t => {
+  setTimeout(() => {
+    const bsToast = bootstrap.Toast.getInstance(t);
+    if (bsToast) bsToast.hide();
+  }, 4000);
+});
+</script>
+{% endblock %}

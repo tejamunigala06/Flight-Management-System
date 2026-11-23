@@ -1,0 +1,308 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}SkyRoute — Book Flights Online{% endblock %}
+{% block meta_description %}Search and book flights worldwide. Economy, Business, and First Class at the best prices. Powered by SkyRoute.{% endblock %}
+
+{% block content %}
+
+<!-- ═══════ HERO SECTION ═══════ -->
+<section class="fms-hero" id="heroSection">
+  <div class="hero-bg-animation">
+    <div class="hero-orb hero-orb-1"></div>
+    <div class="hero-orb hero-orb-2"></div>
+    <div class="hero-orb hero-orb-3"></div>
+  </div>
+
+  <!-- Animated plane path -->
+  <div class="hero-plane-path d-none d-lg-block">
+    <svg viewBox="0 0 1200 120" preserveAspectRatio="none">
+      <path d="M0,60 Q300,10 600,60 Q900,110 1200,60" stroke="rgba(67,97,238,0.3)" stroke-width="1" fill="none" stroke-dasharray="8,4"/>
+    </svg>
+  </div>
+
+  <div class="container-xl position-relative" style="z-index:2;">
+    <div class="row align-items-center min-vh-85">
+      <div class="col-lg-7 hero-text-col">
+        <div class="hero-badge mb-3 animate-fade-up">
+          <i class="bi bi-stars me-2 text-warning"></i>
+          <span>World-Class Flight Experience</span>
+        </div>
+        <h1 class="hero-title animate-fade-up" style="animation-delay:.1s">
+          Discover Your <br/>
+          <span class="hero-gradient-text">Perfect Journey</span>
+        </h1>
+        <p class="hero-subtitle animate-fade-up" style="animation-delay:.2s">
+          Search thousands of flights, compare prices, and book your seat in seconds.
+          Economy, Business, or First Class — your adventure starts here.
+        </p>
+
+        <!-- Stats Row -->
+        <div class="hero-stats animate-fade-up" style="animation-delay:.3s">
+          <div class="hero-stat">
+            <span class="stat-number">{{ total_flights }}+</span>
+            <span class="stat-label">Active Flights</span>
+          </div>
+          <div class="hero-stat-divider"></div>
+          <div class="hero-stat">
+            <span class="stat-number">{{ total_destinations }}</span>
+            <span class="stat-label">Destinations</span>
+          </div>
+          <div class="hero-stat-divider"></div>
+          <div class="hero-stat">
+            <span class="stat-number">{{ total_airlines }}</span>
+            <span class="stat-label">Airlines</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SEARCH CARD -->
+  <div class="container-xl position-relative" style="z-index:3; margin-top: -40px;">
+    <div class="fms-search-card animate-fade-up" style="animation-delay:.4s">
+      <div class="search-card-header">
+        <div class="search-tabs">
+          <button class="search-tab active" id="tab-oneway">
+            <i class="bi bi-arrow-right-circle me-2"></i>One Way
+          </button>
+        </div>
+        <div class="search-hint">
+          <i class="bi bi-info-circle me-1 text-primary"></i>
+          <small>Find the best deals across all classes</small>
+        </div>
+      </div>
+
+      <form method="GET" action="{% url 'flight_results' %}" id="searchForm" class="search-form">
+        <div class="row g-3 align-items-end">
+          <!-- Origin -->
+          <div class="col-lg-3 col-md-6">
+            <label class="form-label fms-label" for="id_origin">
+              <i class="bi bi-geo-alt-fill text-primary me-1"></i> From
+            </label>
+            {{ form.origin }}
+          </div>
+
+          <!-- Swap button -->
+          <div class="col-auto d-none d-lg-flex align-items-end pb-1">
+            <button type="button" class="fms-swap-btn" id="swapBtn" title="Swap airports">
+              <i class="bi bi-arrow-left-right"></i>
+            </button>
+          </div>
+
+          <!-- Destination -->
+          <div class="col-lg-3 col-md-6">
+            <label class="form-label fms-label" for="id_destination">
+              <i class="bi bi-geo-alt text-primary me-1"></i> To
+            </label>
+            {{ form.destination }}
+          </div>
+
+          <!-- Date -->
+          <div class="col-lg-2 col-md-4">
+            <label class="form-label fms-label" for="id_departure_date">
+              <i class="bi bi-calendar3 text-primary me-1"></i> Date
+            </label>
+            {{ form.departure_date }}
+          </div>
+
+          <!-- Passengers -->
+          <div class="col-lg-1 col-md-4">
+            <label class="form-label fms-label" for="id_num_passengers">
+              <i class="bi bi-people-fill text-primary me-1"></i> Pax
+            </label>
+            {{ form.num_passengers }}
+          </div>
+
+          <!-- Class -->
+          <div class="col-lg-2 col-md-4">
+            <label class="form-label fms-label" for="id_seat_class">
+              <i class="bi bi-award-fill text-primary me-1"></i> Class
+            </label>
+            {{ form.seat_class }}
+          </div>
+
+          <!-- Search Button -->
+          <div class="col-12 col-lg-auto">
+            <button type="submit" class="btn fms-btn-search w-100" id="searchBtn">
+              <i class="bi bi-search me-2"></i>
+              <span>Search Flights</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Form errors -->
+        {% if form.errors %}
+        <div class="alert alert-danger mt-3 py-2 border-0 fms-alert-inline">
+          <i class="bi bi-exclamation-triangle me-2"></i>
+          {% for field, errors in form.errors.items %}
+            {% for error in errors %}{{ error }} {% endfor %}
+          {% endfor %}
+        </div>
+        {% endif %}
+      </form>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ FEATURED DESTINATIONS ═══════ -->
+<section class="fms-section py-5" id="destinations">
+  <div class="container-xl">
+    <div class="section-header text-center mb-5">
+      <div class="section-badge mb-2">
+        <i class="bi bi-compass me-2"></i>Popular Destinations
+      </div>
+      <h2 class="section-title">Top Destinations <span class="text-primary">Await You</span></h2>
+      <p class="section-subtitle">Discover the world's most sought-after travel destinations</p>
+    </div>
+
+    <div class="row g-4">
+      <!-- Dubai -->
+      <div class="col-lg-3 col-md-6">
+        <a href="{% url 'flight_results' %}" class="destination-card-link">
+          <div class="destination-card" style="--dest-color: #f97316;">
+            <div class="dest-icon">
+              <i class="bi bi-buildings-fill"></i>
+            </div>
+            <div class="dest-info">
+              <div class="dest-city">Dubai</div>
+              <div class="dest-country"><i class="bi bi-geo-alt me-1"></i>UAE • DXB</div>
+              <div class="dest-badge">Luxury Hub</div>
+            </div>
+            <div class="dest-arrow"><i class="bi bi-arrow-up-right"></i></div>
+          </div>
+        </a>
+      </div>
+
+      <!-- London -->
+      <div class="col-lg-3 col-md-6">
+        <a href="{% url 'flight_results' %}" class="destination-card-link">
+          <div class="destination-card" style="--dest-color: #3b82f6;">
+            <div class="dest-icon">
+              <i class="bi bi-building-fill"></i>
+            </div>
+            <div class="dest-info">
+              <div class="dest-city">London</div>
+              <div class="dest-country"><i class="bi bi-geo-alt me-1"></i>UK • LHR</div>
+              <div class="dest-badge">Classic Choice</div>
+            </div>
+            <div class="dest-arrow"><i class="bi bi-arrow-up-right"></i></div>
+          </div>
+        </a>
+      </div>
+
+      <!-- Singapore -->
+      <div class="col-lg-3 col-md-6">
+        <a href="{% url 'flight_results' %}" class="destination-card-link">
+          <div class="destination-card" style="--dest-color: #22c55e;">
+            <div class="dest-icon">
+              <i class="bi bi-tropical-storm"></i>
+            </div>
+            <div class="dest-info">
+              <div class="dest-city">Singapore</div>
+              <div class="dest-country"><i class="bi bi-geo-alt me-1"></i>Singapore • SIN</div>
+              <div class="dest-badge">Trending</div>
+            </div>
+            <div class="dest-arrow"><i class="bi bi-arrow-up-right"></i></div>
+          </div>
+        </a>
+      </div>
+
+      <!-- New York -->
+      <div class="col-lg-3 col-md-6">
+        <a href="{% url 'flight_results' %}" class="destination-card-link">
+          <div class="destination-card" style="--dest-color: #a855f7;">
+            <div class="dest-icon">
+              <i class="bi bi-building</i>
+            </div>
+            <div class="dest-info">
+              <div class="dest-city">New York</div>
+              <div class="dest-country"><i class="bi bi-geo-alt me-1"></i>USA • JFK</div>
+              <div class="dest-badge">Most Booked</div>
+            </div>
+            <div class="dest-arrow"><i class="bi bi-arrow-up-right"></i></div>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ WHY CHOOSE US ═══════ -->
+<section class="fms-why-section py-5">
+  <div class="container-xl">
+    <div class="section-header text-center mb-5">
+      <div class="section-badge mb-2">
+        <i class="bi bi-shield-check me-2"></i>Why SkyRoute
+      </div>
+      <h2 class="section-title">Travel Smarter, <span class="text-primary">Fly Better</span></h2>
+    </div>
+
+    <div class="row g-4">
+      <div class="col-lg-3 col-md-6">
+        <div class="why-card animate-on-scroll">
+          <div class="why-icon" style="--why-color: #4361ee;">
+            <i class="bi bi-lightning-charge-fill"></i>
+          </div>
+          <h5 class="why-title">Instant Booking</h5>
+          <p class="why-desc">Confirm your flight in under 60 seconds with our streamlined booking process.</p>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6">
+        <div class="why-card animate-on-scroll" style="animation-delay:.1s">
+          <div class="why-icon" style="--why-color: #4cc9f0;">
+            <i class="bi bi-currency-dollar"></i>
+          </div>
+          <h5 class="why-title">Best Price Guarantee</h5>
+          <p class="why-desc">We compare prices across airlines so you always get the best deal available.</p>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6">
+        <div class="why-card animate-on-scroll" style="animation-delay:.2s">
+          <div class="why-icon" style="--why-color: #f72585;">
+            <i class="bi bi-headset"></i>
+          </div>
+          <h5 class="why-title">24/7 Support</h5>
+          <p class="why-desc">Our dedicated team is available around the clock to assist with your journey.</p>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6">
+        <div class="why-card animate-on-scroll" style="animation-delay:.3s">
+          <div class="why-icon" style="--why-color: #f9c74f;">
+            <i class="bi bi-shield-lock-fill"></i>
+          </div>
+          <h5 class="why-title">Secure Payments</h5>
+          <p class="why-desc">Bank-level encryption keeps your payment information safe at all times.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════ CTA ═══════ -->
+{% if not user.is_authenticated %}
+<section class="fms-cta-section py-5">
+  <div class="container-xl">
+    <div class="cta-card">
+      <div class="cta-orb-1"></div>
+      <div class="cta-orb-2"></div>
+      <div class="row align-items-center position-relative" style="z-index:1;">
+        <div class="col-lg-8">
+          <h2 class="cta-title">Ready to Take Off?</h2>
+          <p class="cta-subtitle">Join thousands of travellers who book their flights with SkyRoute every day.</p>
+        </div>
+        <div class="col-lg-4 text-lg-end mt-3 mt-lg-0">
+          <a href="{% url 'register' %}" class="btn fms-btn-primary btn-lg me-2">
+            <i class="bi bi-person-plus me-2"></i>Create Account
+          </a>
+          <a href="{% url 'login' %}" class="btn fms-btn-ghost btn-lg">
+            <i class="bi bi-box-arrow-in-right me-2"></i>Sign In
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+{% endblock %}

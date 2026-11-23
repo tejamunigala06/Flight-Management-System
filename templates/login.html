@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% block title %}Login — SkyRoute{% endblock %}
+
+{% block content %}
+<div class="auth-page">
+  <div class="auth-bg">
+    <div class="auth-orb auth-orb-1"></div>
+    <div class="auth-orb auth-orb-2"></div>
+  </div>
+  <div class="container position-relative" style="z-index:2; padding-top: 100px; padding-bottom: 60px;">
+    <div class="row justify-content-center">
+      <div class="col-lg-5 col-md-7">
+        <!-- Card -->
+        <div class="auth-card animate-fade-up">
+          <!-- Header -->
+          <div class="auth-card-header text-center">
+            <div class="auth-logo mb-3">
+              <i class="bi bi-airplane-engines-fill"></i>
+            </div>
+            <h2 class="auth-title">Welcome Back</h2>
+            <p class="auth-subtitle">Sign in to access your bookings and profile</p>
+          </div>
+
+          <!-- Form -->
+          <div class="auth-card-body">
+            <form method="POST" action="{% url 'login' %}" id="loginForm" novalidate>
+              {% csrf_token %}
+
+              <div class="mb-4">
+                <label class="form-label fms-label" for="{{ form.username.id_for_label }}">
+                  <i class="bi bi-person-fill me-1 text-primary"></i> Username
+                </label>
+                {{ form.username }}
+                {% if form.username.errors %}
+                  <div class="fms-field-error">{{ form.username.errors.0 }}</div>
+                {% endif %}
+              </div>
+
+              <div class="mb-4">
+                <label class="form-label fms-label" for="{{ form.password.id_for_label }}">
+                  <i class="bi bi-lock-fill me-1 text-primary"></i> Password
+                </label>
+                <div class="position-relative">
+                  {{ form.password }}
+                  <button type="button" class="fms-password-toggle" id="togglePassword" aria-label="Toggle password visibility">
+                    <i class="bi bi-eye" id="togglePasswordIcon"></i>
+                  </button>
+                </div>
+                {% if form.password.errors %}
+                  <div class="fms-field-error">{{ form.password.errors.0 }}</div>
+                {% endif %}
+              </div>
+
+              {% if form.non_field_errors %}
+              <div class="alert fms-alert-error mb-4">
+                <i class="bi bi-exclamation-circle me-2"></i>
+                {{ form.non_field_errors.0 }}
+              </div>
+              {% endif %}
+
+              <button type="submit" class="btn fms-btn-primary w-100 py-2 mb-3" id="loginBtn">
+                <span class="btn-text"><i class="bi bi-box-arrow-in-right me-2"></i>Sign In</span>
+                <span class="btn-loading d-none">
+                  <span class="spinner-border spinner-border-sm me-2"></span>Signing in...
+                </span>
+              </button>
+
+              <!-- Demo Credentials -->
+              <div class="demo-creds-box">
+                <div class="demo-creds-title"><i class="bi bi-info-circle me-1"></i> Demo Credentials</div>
+                <div class="row g-2 mt-1">
+                  <div class="col-6">
+                    <button type="button" class="demo-fill-btn w-100" data-user="admin" data-pass="admin123">
+                      <i class="bi bi-shield-fill me-1"></i> Admin
+                    </button>
+                  </div>
+                  <div class="col-6">
+                    <button type="button" class="demo-fill-btn w-100" data-user="user1" data-pass="pass123">
+                      <i class="bi bi-person-fill me-1"></i> User
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <!-- Footer -->
+          <div class="auth-card-footer text-center">
+            <p class="mb-0 text-muted">Don't have an account?
+              <a href="{% url 'register' %}" class="auth-link">Create one</a>
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+  // Password toggle
+  const toggleBtn = document.getElementById('togglePassword');
+  const passwordInput = document.getElementById('id_password');
+  const toggleIcon = document.getElementById('togglePasswordIcon');
+  if (toggleBtn) {
+    toggleBtn.addEventListener('click', () => {
+      const isPassword = passwordInput.type === 'password';
+      passwordInput.type = isPassword ? 'text' : 'password';
+      toggleIcon.className = isPassword ? 'bi bi-eye-slash' : 'bi bi-eye';
+    });
+  }
+
+  // Demo credentials fill
+  document.querySelectorAll('.demo-fill-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.getElementById('id_username').value = btn.dataset.user;
+      document.getElementById('id_password').value = btn.dataset.pass;
+    });
+  });
+
+  // Loading state
+  document.getElementById('loginForm').addEventListener('submit', () => {
+    const btn = document.getElementById('loginBtn');
+    btn.querySelector('.btn-text').classList.add('d-none');
+    btn.querySelector('.btn-loading').classList.remove('d-none');
+    btn.disabled = true;
+  });
+</script>
+{% endblock %}

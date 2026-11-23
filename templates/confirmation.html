@@ -1,0 +1,194 @@
+{% extends 'base.html' %}
+
+{% block title %}Booking Confirmed — {{ booking.booking_reference }} — SkyRoute{% endblock %}
+
+{% block content %}
+<div class="confirmation-page" style="padding-top: 90px; padding-bottom: 60px;">
+  <div class="container" style="max-width: 800px;">
+
+    <!-- Success Banner -->
+    <div class="confirmation-success-banner animate-fade-up mb-4">
+      <div class="success-icon-ring">
+        <i class="bi bi-check-circle-fill"></i>
+      </div>
+      <div>
+        <h1 class="success-title">Booking Confirmed!</h1>
+        <p class="success-subtitle">Your flight has been successfully booked. Have a great journey!</p>
+      </div>
+    </div>
+
+    <!-- E-Ticket Card -->
+    <div class="eticket-card animate-fade-up" style="animation-delay:.1s">
+      <!-- Ticket Header -->
+      <div class="eticket-header">
+        <div class="d-flex align-items-center gap-3">
+          <div class="eticket-logo">
+            <i class="bi bi-airplane-engines-fill"></i>
+          </div>
+          <div>
+            <div class="eticket-brand">SkyRoute</div>
+            <div class="eticket-type">Electronic Ticket / Boarding Pass</div>
+          </div>
+        </div>
+        <div class="text-end">
+          <div class="eticket-ref-label">Booking Reference</div>
+          <div class="eticket-ref">{{ booking.booking_reference }}</div>
+        </div>
+      </div>
+
+      <!-- Ticket Perforation -->
+      <div class="ticket-perforation">
+        <div class="perf-circle perf-left"></div>
+        <div class="perf-dashes"></div>
+        <div class="perf-circle perf-right"></div>
+      </div>
+
+      <!-- Route Banner -->
+      <div class="eticket-route">
+        <div class="text-center">
+          <div class="et-time">{{ booking.flight.departure_time|date:"H:i" }}</div>
+          <div class="et-code">{{ booking.flight.origin.code }}</div>
+          <div class="et-city">{{ booking.flight.origin.city }}</div>
+          <div class="et-date">{{ booking.flight.departure_time|date:"d M Y" }}</div>
+        </div>
+        <div class="et-mid">
+          <div class="et-airline">{{ booking.flight.airline }}</div>
+          <div class="et-line">
+            <span class="et-plane"><i class="bi bi-airplane-fill"></i></span>
+          </div>
+          <div class="et-duration">{{ booking.flight.duration_display }}</div>
+        </div>
+        <div class="text-center">
+          <div class="et-time">{{ booking.flight.arrival_time|date:"H:i" }}</div>
+          <div class="et-code">{{ booking.flight.destination.code }}</div>
+          <div class="et-city">{{ booking.flight.destination.city }}</div>
+          <div class="et-date">{{ booking.flight.arrival_time|date:"d M Y" }}</div>
+        </div>
+      </div>
+
+      <!-- Ticket Perforation -->
+      <div class="ticket-perforation">
+        <div class="perf-circle perf-left"></div>
+        <div class="perf-dashes"></div>
+        <div class="perf-circle perf-right"></div>
+      </div>
+
+      <!-- Details Grid -->
+      <div class="eticket-details">
+        <div class="row g-3">
+          <div class="col-6 col-md-3">
+            <div class="et-detail-item">
+              <div class="et-detail-label"><i class="bi bi-ticket-perforated me-1"></i>Flight</div>
+              <div class="et-detail-value">{{ booking.flight.flight_number }}</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="et-detail-item">
+              <div class="et-detail-label"><i class="bi bi-award me-1"></i>Class</div>
+              <div class="et-detail-value">{{ booking.get_seat_class_display }}</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="et-detail-item">
+              <div class="et-detail-label"><i class="bi bi-people me-1"></i>Passengers</div>
+              <div class="et-detail-value">{{ booking.num_passengers }}</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="et-detail-item">
+              <div class="et-detail-label"><i class="bi bi-currency-rupee me-1"></i>Total Paid</div>
+              <div class="et-detail-value text-success">₹{{ booking.total_price|floatformat:0 }}</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="et-detail-item">
+              <div class="et-detail-label"><i class="bi bi-person me-1"></i>Booked By</div>
+              <div class="et-detail-value">{{ booking.user.get_full_name|default:booking.user.username }}</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="et-detail-item">
+              <div class="et-detail-label"><i class="bi bi-clock-history me-1"></i>Booked On</div>
+              <div class="et-detail-value">{{ booking.created_at|date:"d M Y" }}</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="et-detail-item">
+              <div class="et-detail-label"><i class="bi bi-airplane me-1"></i>Aircraft</div>
+              <div class="et-detail-value">{{ booking.flight.aircraft_type }}</div>
+            </div>
+          </div>
+          <div class="col-6 col-md-3">
+            <div class="et-detail-item">
+              <div class="et-detail-label"><i class="bi bi-info-circle me-1"></i>Status</div>
+              <div class="et-detail-value">
+                <span class="badge {{ booking.status_badge_class }}">{{ booking.get_status_display }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Passengers Table -->
+      {% if passengers %}
+      <div class="eticket-passengers mt-4">
+        <div class="passengers-table-header">
+          <i class="bi bi-people-fill me-2"></i>Passenger Details
+        </div>
+        <div class="table-responsive">
+          <table class="table fms-table mb-0">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Name</th>
+                <th>Passport / ID</th>
+                <th>Nationality</th>
+                <th>Seat</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for passenger in passengers %}
+              <tr>
+                <td>{{ forloop.counter }}</td>
+                <td><strong>{{ passenger.full_name }}</strong></td>
+                <td><code>{{ passenger.passport_number }}</code></td>
+                <td>{{ passenger.nationality }}</td>
+                <td>
+                  <span class="badge fms-seat-badge">{{ passenger.seat_number|default:"TBA" }}</span>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endif %}
+
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="confirmation-actions animate-fade-up d-flex gap-3 flex-wrap justify-content-center mt-4"
+         style="animation-delay:.2s">
+      <button class="btn fms-btn-ghost" onclick="window.print()">
+        <i class="bi bi-printer me-2"></i>Print Ticket
+      </button>
+      <a href="{% url 'booking_history' %}" class="btn fms-btn-primary">
+        <i class="bi bi-ticket-perforated me-2"></i>My Bookings
+      </a>
+      <a href="{% url 'home' %}" class="btn fms-btn-ghost">
+        <i class="bi bi-search me-2"></i>Book Another Flight
+      </a>
+    </div>
+
+    <!-- Important Notice -->
+    <div class="confirmation-notice animate-fade-up mt-4" style="animation-delay:.3s">
+      <i class="bi bi-info-circle-fill text-primary me-2"></i>
+      <small class="text-muted">
+        A confirmation email has been sent to <strong>{{ booking.user.email }}</strong>.
+        Please arrive at the airport at least 2 hours before departure. Carry a valid government-issued photo ID.
+      </small>
+    </div>
+
+  </div>
+</div>
+{% endblock %}

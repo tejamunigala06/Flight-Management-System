@@ -1,0 +1,259 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}
+  {% if search_params %}
+    {{ search_params.origin.city }} → {{ search_params.destination.city }} — SkyRoute
+  {% else %}
+    Search Flights — SkyRoute
+  {% endif %}
+{% endblock %}
+
+{% block content %}
+<div class="results-page" style="padding-top: 80px;">
+
+  <!-- ══════ SEARCH BAR (Compact) ══════ -->
+  <div class="results-search-bar py-3">
+    <div class="container-xl">
+      <form method="GET" action="{% url 'flight_results' %}" id="resultsSearchForm">
+        <div class="row g-2 align-items-end">
+          <div class="col-lg-3 col-md-6">
+            <label class="form-label fms-label small mb-1">
+              <i class="bi bi-geo-alt-fill text-primary me-1"></i>From
+            </label>
+            {{ form.origin }}
+          </div>
+          <div class="col-lg-3 col-md-6">
+            <label class="form-label fms-label small mb-1">
+              <i class="bi bi-geo-alt text-primary me-1"></i>To
+            </label>
+            {{ form.destination }}
+          </div>
+          <div class="col-lg-2 col-md-4">
+            <label class="form-label fms-label small mb-1">
+              <i class="bi bi-calendar3 text-primary me-1"></i>Date
+            </label>
+            {{ form.departure_date }}
+          </div>
+          <div class="col-lg-1 col-md-4">
+            <label class="form-label fms-label small mb-1">
+              <i class="bi bi-people-fill text-primary me-1"></i>Pax
+            </label>
+            {{ form.num_passengers }}
+          </div>
+          <div class="col-lg-2 col-md-4">
+            <label class="form-label fms-label small mb-1">
+              <i class="bi bi-award-fill text-primary me-1"></i>Class
+            </label>
+            {{ form.seat_class }}
+          </div>
+          <div class="col-lg-1">
+            <button type="submit" class="btn fms-btn-primary w-100 py-2">
+              <i class="bi bi-search"></i>
+            </button>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="container-xl py-4">
+    {% if search_params %}
+    <!-- Results Header -->
+    <div class="results-header d-flex flex-wrap align-items-center justify-content-between gap-3 mb-4">
+      <div>
+        <h1 class="results-title mb-1">
+          <span class="text-primary">{{ search_params.origin.city }}</span>
+          <i class="bi bi-arrow-right mx-2 fs-4"></i>
+          <span class="text-primary">{{ search_params.destination.city }}</span>
+        </h1>
+        <p class="text-muted mb-0">
+          <i class="bi bi-calendar3 me-1"></i>{{ search_params.departure_date|date:"D, d M Y" }}
+          &nbsp;·&nbsp;
+          <i class="bi bi-people me-1"></i>{{ search_params.num_passengers }} Passenger{{ search_params.num_passengers|pluralize }}
+          &nbsp;·&nbsp;
+          <span class="badge fms-class-badge">{{ search_params.seat_class|title }}</span>
+          &nbsp;·&nbsp;
+          <strong class="text-white">{{ result_count }} flight{{ result_count|pluralize }}</strong> found
+        </p>
+      </div>
+
+      <!-- Sort Controls -->
+      <div class="sort-controls d-flex gap-2 align-items-center">
+        <span class="text-muted small">Sort by:</span>
+        <div class="btn-group" role="group">
+          <a href="?{{ request.GET.urlencode }}&sort=price"
+             class="btn btn-sm {% if sort_by == 'price' %}fms-btn-primary{% else %}fms-btn-ghost{% endif %}">
+            <i class="bi bi-currency-dollar me-1"></i>Price
+          </a>
+          <a href="?{{ request.GET.urlencode }}&sort=departure"
+             class="btn btn-sm {% if sort_by == 'departure' %}fms-btn-primary{% else %}fms-btn-ghost{% endif %}">
+            <i class="bi bi-clock me-1"></i>Departure
+          </a>
+          <a href="?{{ request.GET.urlencode }}&sort=duration"
+             class="btn btn-sm {% if sort_by == 'duration' %}fms-btn-primary{% else %}fms-btn-ghost{% endif %}">
+            <i class="bi bi-stopwatch me-1"></i>Duration
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Flight Cards -->
+    {% if enriched %}
+    <div class="flight-cards-list">
+      {% for item in enriched %}
+      <div class="flight-card animate-fade-up" style="animation-delay: {{ forloop.counter0 }}00ms">
+        <div class="flight-card-inner">
+          <!-- Airline -->
+          <div class="flight-airline">
+            <div class="airline-logo">
+              <i class="bi bi-airplane-fill"></i>
+            </div>
+            <div>
+              <div class="airline-name">{{ item.flight.airline }}</div>
+              <div class="flight-number">{{ item.flight.flight_number }}</div>
+              <div class="aircraft-type">{{ item.flight.aircraft_type }}</div>
+            </div>
+          </div>
+
+          <!-- Route & Times -->
+          <div class="flight-route">
+            <div class="flight-endpoint">
+              <div class="endpoint-time">{{ item.flight.departure_time|date:"H:i" }}</div>
+              <div class="endpoint-code">{{ item.flight.origin.code }}</div>
+              <div class="endpoint-city">{{ item.flight.origin.city }}</div>
+            </div>
+
+            <div class="flight-path-visual">
+              <div class="path-line"></div>
+              <div class="path-duration">
+                <i class="bi bi-clock me-1"></i>{{ item.flight.duration_display }}
+              </div>
+              <div class="path-plane">
+                <i class="bi bi-airplane-fill"></i>
+              </div>
+              <div class="path-line"></div>
+            </div>
+
+            <div class="flight-endpoint text-end">
+              <div class="endpoint-time">{{ item.flight.arrival_time|date:"H:i" }}</div>
+              <div class="endpoint-code">{{ item.flight.destination.code }}</div>
+              <div class="endpoint-city">{{ item.flight.destination.city }}</div>
+            </div>
+          </div>
+
+          <!-- Status & Availability -->
+          <div class="flight-meta d-none d-md-block">
+            <span class="badge {{ item.flight.status_badge_class }} mb-1">{{ item.flight.status|title }}</span>
+            <div class="seats-left">
+              <i class="bi bi-people me-1"></i>
+              <span class="{% if item.available < 10 %}text-warning{% else %}text-success{% endif %}">
+                {{ item.available }} seats left
+              </span>
+            </div>
+            <div class="text-muted small">{{ item.seat_class|title }} class</div>
+          </div>
+
+          <!-- Price & CTA -->
+          <div class="flight-price-cta">
+            <div class="price-block">
+              <div class="price-label">per person</div>
+              <div class="price-amount">₹{{ item.price|floatformat:0 }}</div>
+              {% if item.num_passengers > 1 %}
+              <div class="price-total">Total: ₹{{ item.total_price|floatformat:0 }}</div>
+              {% endif %}
+            </div>
+            <a href="{% url 'booking' item.flight.id %}?seat_class={{ item.seat_class }}&num_passengers={{ item.num_passengers }}"
+               class="btn fms-btn-primary btn-book w-100 mt-2">
+              <i class="bi bi-ticket-perforated me-1"></i> Book Now
+            </a>
+          </div>
+        </div>
+
+        <!-- Expandable Details -->
+        <div class="flight-card-details" id="details-{{ item.flight.id }}">
+          <hr class="fms-divider my-3" />
+          <div class="row g-3 small text-muted">
+            <div class="col-md-3">
+              <i class="bi bi-calendar-event text-primary me-1"></i>
+              <strong>Departure:</strong><br/>
+              {{ item.flight.departure_time|date:"D d M Y, H:i" }}
+            </div>
+            <div class="col-md-3">
+              <i class="bi bi-calendar-check text-primary me-1"></i>
+              <strong>Arrival:</strong><br/>
+              {{ item.flight.arrival_time|date:"D d M Y, H:i" }}
+            </div>
+            <div class="col-md-3">
+              <i class="bi bi-info-circle text-primary me-1"></i>
+              <strong>Aircraft:</strong><br/>
+              {{ item.flight.aircraft_type }}
+            </div>
+            <div class="col-md-3">
+              <i class="bi bi-currency-dollar text-primary me-1"></i>
+              <strong>All Classes:</strong><br/>
+              Eco: ₹{{ item.flight.economy_price|floatformat:0 }} &nbsp;|&nbsp;
+              Biz: ₹{{ item.flight.business_price|floatformat:0 }}
+            </div>
+          </div>
+        </div>
+
+        <button class="flight-details-toggle" onclick="toggleDetails({{ item.flight.id }}, this)">
+          <i class="bi bi-chevron-down me-1"></i> Flight Details
+        </button>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% else %}
+    <!-- No Results -->
+    <div class="no-results-state text-center py-5">
+      <div class="no-results-icon mb-3">
+        <i class="bi bi-airplane-engines"></i>
+      </div>
+      <h3 class="text-white mb-2">No Flights Found</h3>
+      <p class="text-muted mb-4">
+        No flights available from <strong>{{ search_params.origin.city }}</strong> to
+        <strong>{{ search_params.destination.city }}</strong> on
+        <strong>{{ search_params.departure_date|date:"d M Y" }}</strong>
+        in <strong>{{ search_params.seat_class|title }}</strong> class.
+      </p>
+      <div class="d-flex gap-2 justify-content-center flex-wrap">
+        <a href="{% url 'home' %}" class="btn fms-btn-primary">
+          <i class="bi bi-search me-2"></i>Try Different Dates
+        </a>
+        <a href="{% url 'home' %}" class="btn fms-btn-ghost">
+          <i class="bi bi-house me-2"></i>Go Home
+        </a>
+      </div>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <!-- Initial state (no search yet) -->
+    <div class="text-center py-5">
+      <div class="no-results-icon mb-3">
+        <i class="bi bi-search"></i>
+      </div>
+      <h3 class="text-white mb-2">Search for Flights</h3>
+      <p class="text-muted">Use the search form above to find available flights.</p>
+      <a href="{% url 'home' %}" class="btn fms-btn-primary mt-2">
+        <i class="bi bi-house me-2"></i>Go to Home
+      </a>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function toggleDetails(flightId, btn) {
+  const details = document.getElementById('details-' + flightId);
+  const isOpen = details.classList.toggle('open');
+  btn.innerHTML = isOpen
+    ? '<i class="bi bi-chevron-up me-1"></i> Hide Details'
+    : '<i class="bi bi-chevron-down me-1"></i> Flight Details';
+}
+</script>
+{% endblock %}
