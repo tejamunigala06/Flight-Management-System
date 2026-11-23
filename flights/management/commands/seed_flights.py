@@ -148,61 +148,91 @@ class Command(BaseCommand):
         self.stdout.write(f'  Created {flight_count} flights.')
 
         self.stdout.write('Creating users...')
-        # Superuser
-        if not User.objects.filter(username='admin').exists():
-            User.objects.create_superuser(
-                username='admin', email='admin@flightms.com',
-                password='admin123', first_name='Admin', last_name='User'
-            )
-            self.stdout.write('  Created superuser: admin / admin123')
 
-        # Demo users
+        # Create demo users without hardcoded passwords
         demo_users = [
-            {'username': 'user1', 'password': 'pass123', 'first_name': 'Rahul', 'last_name': 'Sharma', 'email': 'rahul@example.com'},
-            {'username': 'user2', 'password': 'pass123', 'first_name': 'Priya', 'last_name': 'Patel', 'email': 'priya@example.com'},
+            {
+                'username': 'user1',
+                'first_name': 'Rahul',
+                'last_name': 'Sharma',
+                'email': 'rahul@example.com'
+            },
+            {
+                'username': 'user2',
+                'first_name': 'Priya',
+                'last_name': 'Patel',
+                'email': 'priya@example.com'
+            }
         ]
+
         created_users = []
+
         for ud in demo_users:
             if not User.objects.filter(username=ud['username']).exists():
-                u = User.objects.create_user(**ud)
+                u = User.objects.create_user(
+                    username=ud['username'],
+                    email=ud['email'],
+                    first_name=ud['first_name'],
+                    last_name=ud['last_name']
+                )
+                u.set_unusable_password()
+                u.save()
                 created_users.append(u)
-                self.stdout.write(f"  Created user: {ud['username']} / {ud['password']}")
+                self.stdout.write(f"  Created demo user: {ud['username']}")
 
-        # Seed some bookings for demo users
+        # Seed sample bookings
         if created_users:
             self.stdout.write('Seeding sample bookings...')
-            flights_list = list(Flight.objects.all()[:20])
-            for u in created_users:
-                for _ in range(random.randint(2, 4)):
-                    flight = random.choice(flights_list)
-                    sc = random.choice(['economy', 'business'])
-                    num_p = random.randint(1, 2)
-                    price = flight.get_price(sc) * num_p
-                    b = Booking.objects.create(
-                        user=u, flight=flight,
-                        seat_class=sc, num_passengers=num_p,
-                        total_price=price, status='confirmed'
-                    )
-                    # Add passengers
-                    names = [
-                        ('Amit', 'Kumar'), ('Sunita', 'Verma'), ('Rajan', 'Mehta'),
-                        ('Anjali', 'Singh'), ('Vikram', 'Nair'), ('Pooja', 'Reddy'),
-                    ]
-                    import string
-                    seat_letters = ['A', 'B', 'C', 'D', 'E', 'F']
-                    for j in range(num_p):
-                        fn, ln = random.choice(names)
-                        Passenger.objects.create(
-                            booking=b,
-                            first_name=fn, last_name=ln,
-                            date_of_birth=datetime.date(random.randint(1970, 2000), random.randint(1, 12), random.randint(1, 28)),
-                            passport_number='P' + str(random.randint(1000000, 9999999)),
-                            nationality='Indian',
-                            seat_number=f"{random.randint(1, 30)}{random.choice(seat_letters)}"
-                        )
-            self.stdout.write('  Sample bookings created.')
 
-        self.stdout.write(self.style.SUCCESS('\n[OK] Database seeded successfully!'))
-        self.stdout.write(self.style.SUCCESS('   Admin:  admin / admin123'))
-        self.stdout.write(self.style.SUCCESS('   User 1: user1 / pass123'))
-        self.stdout.write(self.style.SUCCESS('   User 2: user2 / pass123'))
+            flights_list = list(Flight.objects.all()[:20])
+
+            if flights_list:
+                for u in created_users:
+                    for _ in range(random.randint(2, 4)):
+                        flight = random.choice(flights_list)
+                        sc = random.choice(['economy', 'business'])
+                        num_p = random.randint(1, 2)
+                        price = flight.get_price(sc) * num_p
+
+                        booking = Booking.objects.create(
+                            user=u,
+                            flight=flight,
+                            seat_class=sc,
+                            num_passengers=num_p,
+                            total_price=price,
+                            status='confirmed'
+                        )
+
+                        names = [
+                            ('Amit', 'Kumar'),
+                            ('Sunita', 'Verma'),
+                            ('Rajan', 'Mehta'),
+                            ('Anjali', 'Singh'),
+                            ('Vikram', 'Nair'),
+                            ('Pooja', 'Reddy')
+                        ]
+
+                        seat_letters = ['A', 'B', 'C', 'D', 'E', 'F']
+
+                        for j in range(num_p):
+                            fn, ln = random.choice(names)
+
+                            Passenger.objects.create(
+                                booking=booking,
+                                first_name=fn,
+                                last_name=ln,
+                                date_of_birth=datetime.date(
+                                    random.randint(1970, 2000),
+                                    random.randint(1, 12),
+                                    random.randint(1, 28)
+                                ),
+                                passport_number='P' + str(random.randint(1000000, 9999999)),
+                                nationality='Indian',
+                                seat_number=f"{random.randint(1, 30)}{random.choice(seat_letters)}"
+                            )
+
+                self.stdout.write('  Sample bookings created.')
+
+        self.stdout.write(
+            self.style.SUCCESS('\n[OK] Database seeded successfully!')
+        )
